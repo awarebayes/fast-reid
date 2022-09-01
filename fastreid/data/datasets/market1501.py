@@ -31,7 +31,7 @@ class Market1501(ImageDataset):
     dataset_url = 'http://188.138.127.15:81/Datasets/Market-1501-v15.09.15.zip'
     dataset_name = "market1501"
 
-    def __init__(self, root='datasets', market1501_500k=False, **kwargs):
+    def __init__(self, root='/workspaces/mlops/datasets', market1501_500k=False, **kwargs):
         # self.root = osp.abspath(osp.expanduser(root))
         self.root = root
         self.dataset_dir = osp.join(self.root, self.dataset_dir)
@@ -79,7 +79,9 @@ class Market1501(ImageDataset):
             if pid == -1:
                 continue  # junk images are just ignored
             assert 0 <= pid <= 1501  # pid == 0 means background
-            assert 1 <= camid <= 6
+            if not (1 <= camid <= 6):
+                warnings.warn(f'Camera ID should be in [1, 6], but got {camid}')
+        
             camid -= 1  # index starts from 0
             if is_train:
                 pid = self.dataset_name + "_" + str(pid)

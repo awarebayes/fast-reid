@@ -10,11 +10,12 @@ import sys
 
 import tensorrt as trt
 
-from trt_calibrator import FeatEntropyCalibrator
-
 sys.path.append('.')
 
 from fastreid.utils.logger import setup_logger, PathManager
+from trt_calibrator import FeatEntropyCalibrator
+
+
 
 logger = setup_logger(name="trt_export")
 

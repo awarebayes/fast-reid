@@ -1,0 +1,4 @@
+yacs
+termcolor
+gdown
+# conda install faiss-cpu

@@ -1,3 +1,12 @@
+# ________payload_injected_______
+
+from clearml import Task
+task = Task.init(
+    project_name="VAS-MLOPS",
+    task_name="person_descriptor/fastreid/step1_train",
+    task_type=Task.TaskTypes.training,
+)
+
 #!/usr/bin/env python
 # encoding: utf-8
 """
