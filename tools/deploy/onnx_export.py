@@ -157,7 +157,10 @@ if __name__ == '__main__':
     inputs = torch.randn(args.batch_size, 3, cfg.INPUT.SIZE_TEST[0], cfg.INPUT.SIZE_TEST[1]).to(model.device)
     onnx_model = export_onnx_model(model, inputs)
 
-    model_simp, check = simplify(onnx_model)
+    model_simp, check = simplify(onnx_model,
+                                dynamic_input_shape=True,
+                                input_shapes={"input": list(inputs.shape)},
+                                 )
 
     model_simp = remove_initializer_from_input(model_simp)
 
