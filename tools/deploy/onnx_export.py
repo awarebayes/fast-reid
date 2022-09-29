@@ -55,7 +55,7 @@ def get_parser():
     )
     parser.add_argument(
         "--output",
-        default='onnx_model',
+        default='outputs/onnx_model',
         help='path to save converted onnx model'
     )
     parser.add_argument(
@@ -148,6 +148,7 @@ if __name__ == '__main__':
     if cfg.MODEL.HEADS.POOL_LAYER == 'FastGlobalAvgPool':
         cfg.MODEL.HEADS.POOL_LAYER = 'GlobalAvgPool'
     model = build_model(cfg)
+    assert cfg.MODEL.WEIGHTS
     Checkpointer(model).load(cfg.MODEL.WEIGHTS)
     if hasattr(model.backbone, 'deploy'):
         model.backbone.deploy(True)
