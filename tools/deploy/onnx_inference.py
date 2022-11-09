@@ -82,4 +82,4 @@ if __name__ == "__main__":
             image = preprocess(path, args.height, args.width)
             feat = ort_sess.run(None, {input_name: image})[0]
             feat = normalize(feat, axis=1)
-            np.save(os.path.join(args.output, path.replace('.jpg', '.npy').split('/')[-1]), feat)
+            np.savetxt(os.path.join(args.output, path.replace('.jpg', '.npy').split('/')[-1]), feat)

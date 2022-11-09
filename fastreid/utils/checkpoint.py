@@ -126,6 +126,22 @@ class Checkpointer(object):
         ):  # handle some existing subclasses that returns None
             self._log_incompatible_keys(incompatible)
 
+        """
+        checkpoint = self._load_file(path)
+        keys = list(checkpoint['model'].keys())
+        for k in keys:
+            prefix = k.split('.')[0]
+            if prefix == 'fc':
+                replaced = '.'.join(['heads'] + k.split('.')[1:])
+                checkpoint['model'][replaced] = checkpoint['model'][k]
+        incompatible = self._load_model(checkpoint)
+        if (
+                incompatible is not None
+        ):
+
+            self._log_incompatible_keys(incompatible)
+        """
+
         for key in self.checkpointables if checkpointables is None else checkpointables:
             if key in checkpoint:  # pyre-ignore
                 self.logger.info("Loading {} from {}".format(key, path))

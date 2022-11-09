@@ -21,6 +21,20 @@ sys.path.append('.')
 from fastreid.config import get_cfg
 from fastreid.engine import DefaultTrainer, default_argument_parser, default_setup, launch
 from fastreid.utils.checkpoint import Checkpointer
+import torch
+import numpy as np
+import random
+
+def set_random_seed(seed):
+    """
+    Set random seed for reproducibility.
+    Args:
+        seed (int): random seed
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 
 def setup(args):
@@ -36,6 +50,7 @@ def setup(args):
 
 
 def main(args):
+    set_random_seed(42)
     cfg = setup(args)
 
     if args.eval_only:
@@ -65,3 +80,5 @@ if __name__ == "__main__":
         dist_url=args.dist_url,
         args=(args,),
     )
+
+    task.upload_artifact("best_ckpt.pth", "/home/mscherbina/Documents/work/vas-mlops/logs/market1501/sbs_S50/model_best.pth")

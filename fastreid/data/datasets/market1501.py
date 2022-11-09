@@ -80,7 +80,7 @@ class Market1501(ImageDataset):
                 continue  # junk images are just ignored
             assert 0 <= pid <= 1501  # pid == 0 means background
             if not (1 <= camid <= 6):
-                warnings.warn(f'Camera ID should be in [1, 6], but got {camid}')
+                warnings.warn(f'Camera ID should be in [1, 6], but got {camid}: ' + str(camid))
         
             camid -= 1  # index starts from 0
             if is_train:

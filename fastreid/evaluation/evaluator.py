@@ -78,6 +78,12 @@ class DatasetEvaluator:
 #                     results[k] = v
 #         return results
 
+def show(img, norm=255):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    npimg = img.numpy() / norm
+    plt.imshow(np.transpose(npimg, (1, 2, 0)), interpolation='nearest')
+    plt.show()
 
 def inference_on_dataset(model, data_loader, evaluator, flip_test=False):
     """
@@ -109,6 +115,9 @@ def inference_on_dataset(model, data_loader, evaluator, flip_test=False):
     total_compute_time = 0
     with inference_context(model), torch.no_grad():
         for idx, inputs in enumerate(data_loader):
+            if isinstance(inputs, list):
+
+                inputs = {"images": inputs[0].cuda()}
             if idx == num_warmup:
                 start_time = time.perf_counter()
                 total_compute_time = 0
@@ -117,11 +126,19 @@ def inference_on_dataset(model, data_loader, evaluator, flip_test=False):
             outputs = model(inputs)
             # Flip test
             if flip_test:
-                inputs["images"] = inputs["images"].flip(dims=[3])
+                inputs["images"] = torch.fliplr(inputs["images"])
                 flip_outputs = model(inputs)
-                outputs = (outputs + flip_outputs) / 2
+                outputs = (outputs + flip_outputs)
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
+
+            #for idx, i in enumerate(outputs[0]):
+            #    print(idx, i.item())
+
+            #print("Inference!", flip_test)
+            outputs_norm = torch.norm(outputs, p=2, dim=1, keepdim=True)
+            outputs = outputs.div(outputs_norm.expand_as(outputs))
+
             total_compute_time += time.perf_counter() - start_compute_time
             evaluator.process(inputs, outputs)
 

@@ -23,7 +23,6 @@ class MyTestCase(unittest.TestCase):
         y = model(test_inp)
 
         model.deploy(mode=True)
-        from ipdb import set_trace; set_trace()
         fused_y = model(test_inp)
 
         print("final error :", torch.max(torch.abs(fused_y - y)).item())
