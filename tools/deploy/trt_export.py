@@ -10,12 +10,11 @@ import sys
 
 import tensorrt as trt
 
+from .trt_calibrator import FeatEntropyCalibrator
+
 sys.path.append('.')
 
 from fastreid.utils.logger import setup_logger, PathManager
-from trt_calibrator import FeatEntropyCalibrator
-
-
 
 logger = setup_logger(name="trt_export")
 
@@ -143,12 +142,12 @@ def onnx2trt(
         config.set_flag(trt.BuilderFlag.STRICT_TYPES)
 
     logger.info("Building an engine from file {}; this may take a while...".format(onnx_file_path))
-    engine = builder.build_cuda_engine(network)
+    engine = builder.build_serialized_network(network, config)
     logger.info("Create engine successfully!")
 
     logger.info("Saving TRT engine file to path {}".format(save_path))
     with open(save_path, 'wb') as f:
-        f.write(engine.serialize())
+        f.write(bytearray(engine))
     logger.info("Engine file has already saved to {}!".format(save_path))
 
 
