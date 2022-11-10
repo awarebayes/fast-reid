@@ -10,10 +10,7 @@ import sys
 
 import tensorrt as trt
 
-from .trt_calibrator import FeatEntropyCalibrator
-
-sys.path.append('.')
-
+from trt_calibrator import FeatEntropyCalibrator
 from fastreid.utils.logger import setup_logger, PathManager
 
 logger = setup_logger(name="trt_export")
@@ -98,6 +95,7 @@ def onnx2trt(
         int8_calibrator (volksdep.calibrators.base.BaseCalibrator, default is None): calibrator for int8 mode,
             if None, default calibrator will be used as calibration data.
     """
+    print("onnx model", onnx_file_path)
     mode = mode.lower()
     assert mode in ['fp32', 'fp16', 'int8'], "mode should be in ['fp32', 'fp16', 'int8'], " \
                                              "but got {}".format(mode)
@@ -132,17 +130,18 @@ def onnx2trt(
     config.max_workspace_size = max_workspace_size * (1 << 25)
     if mode == 'fp16':
         assert builder.platform_has_fast_fp16, "not support fp16"
-        builder.fp16_mode = True
+        config.set_flag(trt.BuilderFlag.FP16)
     if mode == 'int8':
         assert builder.platform_has_fast_int8, "not support int8"
-        builder.int8_mode = True
-        builder.int8_calibrator = int8_calibrator
+        config.set_flag(trt.BuilderFlag.INT8)
+        config.int8_calibrator = int8_calibrator
 
     if strict_type_constraints:
         config.set_flag(trt.BuilderFlag.STRICT_TYPES)
 
     logger.info("Building an engine from file {}; this may take a while...".format(onnx_file_path))
     engine = builder.build_serialized_network(network, config)
+    assert engine is not None
     logger.info("Create engine successfully!")
 
     logger.info("Saving TRT engine file to path {}".format(save_path))

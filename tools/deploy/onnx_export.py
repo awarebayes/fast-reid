@@ -60,7 +60,7 @@ def get_parser():
     )
     parser.add_argument(
         '--batch-size',
-        default=1,
+        default=8,
         type=int,
         help="the maximum batch size of onnx runtime"
     )
@@ -149,6 +149,7 @@ if __name__ == '__main__':
         cfg.MODEL.HEADS.POOL_LAYER = 'GlobalAvgPool'
     model = build_model(cfg)
     assert cfg.MODEL.WEIGHTS
+    print("Loading weights from {}".format(cfg.MODEL.WEIGHTS))
     Checkpointer(model).load(cfg.MODEL.WEIGHTS)
     if hasattr(model.backbone, 'deploy'):
         model.backbone.deploy(True)
@@ -159,7 +160,7 @@ if __name__ == '__main__':
     onnx_model = export_onnx_model(model, inputs)
 
     model_simp, check = simplify(onnx_model,
-                                dynamic_input_shape=True,
+                                #dynamic_input_shape=True,
                                 input_shapes={"input": list(inputs.shape)},
                                  )
 

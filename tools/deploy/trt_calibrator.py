@@ -23,6 +23,7 @@ import torchvision.transforms as T
 
 sys.path.append('../..')
 sys.path.append('..')
+sys.path.append('.')
 
 from fastreid.data.build import _root
 from fastreid.data.data_utils import read_image
