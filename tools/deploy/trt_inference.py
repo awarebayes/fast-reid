@@ -6,12 +6,16 @@
 import argparse
 import glob
 import os
+from types import SimpleNamespace
 
 import cv2
 import numpy as np
 import pycuda.driver as cuda
 import tensorrt as trt
+import torch
 import tqdm
+
+# %%
 
 TRT_LOGGER = trt.Logger()
 
@@ -77,6 +81,7 @@ class TrtEngine:
         self._batch_size = batch_size
         self._device_ctx = cuda.Device(gpu_idx).make_context()
         self._engine = self._load_engine(trt_file)
+        assert(self.engine is not None)
         self._context = self._engine.create_execution_context()
         self._input, self._output, self._bindings, self._stream = self._allocate_buffers(self._context)
 
@@ -179,22 +184,66 @@ class TrtEngine:
         del self._stream
         self._device_ctx.detach()  # release device context
 
+# %%
+args = SimpleNamespace(
+    model_path="./engines_native/person_descriptor/featurenet_sbs_S50_fp16.engine",
+    batch_size=8,
+)
+#%%
+trt = TrtEngine(args.model_path, batch_size=args.batch_size)
 
-if __name__ == "__main__":
-    args = get_parser().parse_args()
+#%%
 
-    trt = TrtEngine(args.model_path, batch_size=args.batch_size)
+import sys
+sys.path.append("./github_repos/fast-reid")
 
-    if not os.path.exists(args.output): os.makedirs(args.output)
+# %%
+from fastreid.data import build_reid_test_loader, build_reid_train_loader
+from fastreid.evaluation import (ReidEvaluator,
+                                 inference_on_dataset, print_csv_format)
+from fastreid.config import get_cfg
+import torch
 
-    if args.input:
-        if os.path.isdir(args.input[0]):
-            args.input = glob.glob(os.path.expanduser(args.input[0]))
-            assert args.input, "The input path(s) was not found"
-        inputs = []
-        for img_path in tqdm.tqdm(args.input):
-            img = cv2.imread(img_path)
-            # the model expects RGB inputs
-            cvt_img = img[:, :, ::-1]
-            feat = trt.inference_on_images([cvt_img])
-            np.save(os.path.join(args.output, os.path.basename(img_path).split('.')[0] + '.npy'), feat)
+# %%
+
+cfg = get_cfg()
+
+# %%
+
+dataset_name = "Market1501"
+cfg = get_cfg()
+cfg.merge_from_file("src/nn/person_descriptor/fast-reid/configs/Market1501/sbs_S50.yml")
+os.chdir("./github_repos/fast-reid")
+data_loader, num_query = build_reid_test_loader(cfg, dataset_name=dataset_name)
+evaluator = ReidEvaluator(cfg, num_query, None)
+
+# %%
+
+class ModelWrapper:
+    def __init__(self, model):
+        self.model = model
+        self.training = False
+        self.eval = lambda: None
+        self.train = lambda *a, **k: None
+        self.batch_size = 8
+
+    def __call__(self, imgs):
+        paths = imgs['img_paths']
+        feats = []
+        batch_size = self.batch_size
+        for i in range(0, len(paths), batch_size):
+            imgs = [cv2.imread(p) for p in paths[i:i+batch_size]]
+            imgs = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in imgs] # BGR to RGB
+            features = self.model.inference_on_images(imgs)
+            for f in features:
+                feats.append(f)
+        return torch.tensor(feats)
+
+# %%
+
+model = ModelWrapper(trt)
+results_i = inference_on_dataset(model, data_loader, evaluator, flip_test=True)
+results_i['dataset'] = dataset_name
+
+# %%
+results_i
